@@ -1,8 +1,9 @@
 package dev.totos.rag_hub.config;
 
+// Make sure to adjust this import to match your JwtAuthenticationFilter location
+import dev.totos.rag_hub.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -12,55 +13,47 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableMethodSecurity
-public class securityConfig {
-//    private final CustomAuthenticationEntryPoint authEntryPoint;
-//    private final CustomAccessDeniedHandler accessDeniedHandler;
-//
-//    public SecurityConfig(CustomAuthenticationEntryPoint authEntryPoint,
-//                          CustomAccessDeniedHandler accessDeniedHandler) {
-//        this.authEntryPoint = authEntryPoint;
-//        this.accessDeniedHandler = accessDeniedHandler;
-//    }
+public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
+
+    private final JwtAuthenticationFilter jwtAuthFilter;
+
+    // 1. Inject your custom JWT filter
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+        this.jwtAuthFilter = jwtAuthFilter;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 1. Disable CSRF for stateless REST endpoints
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 2. Enable CORS handling
                 .cors(Customizer.withDefaults())
 
-                // 3. Make session management stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 4. Return JSON 401/403 instead of HTML login redirects
-//                .exceptionHandling(exceptions -> exceptions
-//                        .authenticationEntryPoint(authEntryPoint)
-//                        .accessDeniedHandler(accessDeniedHandler)
-//                )
-
-                // 5. Explicit Catch-All Authorization Rule
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**", "/public/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                // 6. Security Headers
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+
+                // Security Headers
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                 )
 
                 .build();
     }
+
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // Uses BCrypt with a default strength/log-rounds of 10
         return new BCryptPasswordEncoder();
     }
 }
