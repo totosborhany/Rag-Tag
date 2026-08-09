@@ -33,11 +33,17 @@ public class Document {
 
     @Column(name = "file_type")
     private String fileType;
+    @Column(name="file_size")
+    private Long fileSize;
 
-    public Document(User user, String fileName, String fileType) {
+
+    public Document(User user, String fileName, String fileType,Integer chunksCount,DocumentStatus status,Long fileSize) {
         this.user = user;
         this.fileName = fileName;
         this.fileType = fileType;
+        this.chunksCount=chunksCount;
+        this.status = status;
+    this.fileSize=fileSize;
     }
 
     public Document() {
@@ -93,6 +99,14 @@ public class Document {
 
     public User getUser() {
         return user;
+    }
+
+    public Long getFileSize() {
+        return fileSize;
+    }
+
+    public void setFileSize(Long fileSize) {
+        this.fileSize = fileSize;
     }
 
     public void setUser(User user) {

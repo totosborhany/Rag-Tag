@@ -1,6 +1,7 @@
 package dev.totos.rag_hub.config;
 
 // Make sure to adjust this import to match your JwtAuthenticationFilter location
+import dev.totos.rag_hub.security.DelegatingAuthenticationEntryPoint;
 import dev.totos.rag_hub.security.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,10 +21,11 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-
+    private final DelegatingAuthenticationEntryPoint authEntryPoint;
     // 1. Inject your custom JWT filter
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter) {
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,DelegatingAuthenticationEntryPoint authEntryPoint) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.authEntryPoint=authEntryPoint;
     }
 
     @Bean
@@ -35,13 +37,14 @@ public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                ).exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authEntryPoint)
                 )
 
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/**", "/public/**").permitAll()
+                        .requestMatchers("/api/v1/auth/**", "/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
-
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
                 // Security Headers

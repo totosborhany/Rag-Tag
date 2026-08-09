@@ -5,6 +5,7 @@ import dev.totos.rag_hub.exception.ApiException;
 import dev.totos.rag_hub.repository.UserRepository;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,12 +71,14 @@ public class authService {
 
         // 2. Check null BEFORE parsing UUID
         if (rawUserId == null) {
-            throw new ApiException("Token expired or invalid", HttpStatus.BAD_REQUEST);
+            throw new BadCredentialsException("Token expired or invalid");
         }
 
         UUID userId = UUID.fromString(rawUserId);
 
-        User user = userRepository.findById(userId).orElseThrow(()->new ApiException("Token expired or invalid", HttpStatus.BAD_REQUEST));
+        User user = userRepository.findById(userId).orElseThrow(()->new BadCredentialsException("Token expired or invalid"));
+
+
 
         if(!(newPassword.equals(confirmNewPassword))){
             throw new ApiException("Sorry passwords should match", HttpStatus.BAD_REQUEST);
