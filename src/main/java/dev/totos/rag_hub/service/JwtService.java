@@ -1,10 +1,11 @@
 package dev.totos.rag_hub.service;
 
+import dev.totos.rag_hub.utils.CookieUtils;
+import dev.totos.rag_hub.utils.RedisUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -26,9 +27,11 @@ public class JwtService {
 
     @Value("${jwt.refresh-expiration}")
     private long refreshExpiration;
-    private final RedisTemplate<String,String> redisTemplate;
-    JwtService( RedisTemplate<String,String> redisTemplate){
-        this.redisTemplate=redisTemplate;
+    private final CookieUtils cookieUtils;
+    private final RedisUtil redisUtil;
+    JwtService(RedisUtil redisUtil, CookieUtils cookieUtils){
+        this.cookieUtils=cookieUtils;
+        this.redisUtil=redisUtil;
     }
     public String generateAccessToken(UUID userId) {
         return buildToken(userId, accessSecret, accessExpiration);
@@ -79,14 +82,20 @@ public class JwtService {
         return UUID.fromString(claims.getSubject());
     }
     public void saveRefreshTokenToRedis(UUID userId, String refreshToken) {
-        redisTemplate.opsForValue().set(
-                "refreshToken:" + userId,
-                refreshToken,
-                Duration.ofDays(7)
-        );
+       redisUtil.saveRefreshTokenToRedis(userId,refreshToken);
+    }
+    public void deleteRefreshTokenFromRedis(UUID userId) {
+        redisUtil.deleteFromRedis("refreshToken", userId,null);
     }
 
-    public void deleteRefreshTokenFromRedis(UUID userId) {
-        redisTemplate.delete("refreshToken:" + userId);
+  public Boolean  validateRefreshTokenWithRedis(String refreshToken,UUID userId){
+      if (userId == null || refreshToken == null) {
+          return false;
+      }
+        String redisRefreshToken = redisUtil.getRefreshTokenFromredis(userId);
+
+        return  refreshToken.equals(redisRefreshToken);
     }
+
+
 }

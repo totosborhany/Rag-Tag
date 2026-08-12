@@ -1,6 +1,7 @@
 package dev.totos.rag_hub.exception;
 
 import dev.totos.rag_hub.records.ErrorResponse;
+import io.github.resilience4j.ratelimiter.RequestNotPermitted;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -44,7 +45,6 @@ public class GlobalExceptionHandler {
     }
     @ExceptionHandler(CompletionException.class)
     public ResponseEntity<Map<String, Object>> handleCompletionException(CompletionException ex) {
-        // Check if the root cause was our custom ApiException
         if (ex.getCause() instanceof ApiException apiException) {
             return ResponseEntity
                     .status(apiException.getStatus())
@@ -55,6 +55,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", "An unexpected error occurred during processing"));
+    }
+    @ExceptionHandler(RequestNotPermitted.class)
+    public ResponseEntity<ErrorResponse> handleRateLimitError(RequestNotPermitted ex, HttpServletRequest request){
+        log.error("rate limit exception occurred at path: {}", request.getRequestURI(), ex);
+
+        ErrorResponse body =  ErrorResponse.of(
+                "Too many Requests try again later"+ex.getMessage(),
+                HttpStatus.TOO_MANY_REQUESTS
+                ,
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).header("Retry-After", "60").body(body);
     }
 
 }

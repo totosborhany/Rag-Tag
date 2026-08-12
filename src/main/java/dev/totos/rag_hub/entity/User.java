@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -22,7 +24,23 @@ public class User {
 
     @Column(name = "password_hash", nullable = false, length = 255)
     private String passwordHash;
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    private List<Document> documents = new ArrayList<>();
 
+    // 2. One-to-Many relationship with Conversation (Auto-deletes chats if user is deleted)
+    @OneToMany(
+            mappedBy = "user",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.LAZY
+    )
+    @OrderBy("createdAt ASC")
+    private List<Conversation> conversations = new ArrayList<>();
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

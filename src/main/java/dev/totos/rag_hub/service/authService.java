@@ -3,7 +3,8 @@ package dev.totos.rag_hub.service;
 import dev.totos.rag_hub.entity.User;
 import dev.totos.rag_hub.exception.ApiException;
 import dev.totos.rag_hub.repository.UserRepository;
-import org.springframework.data.redis.core.RedisTemplate;
+import dev.totos.rag_hub.utils.RedisUtil;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -19,12 +20,14 @@ public class authService {
     private final UserRepository userRepository;
         private final PasswordEncoder passwordEncoder;
         private final EmailService emailService;
-        private final RedisTemplate<String,String> redisTemplate;
-    authService(UserRepository userRepository,PasswordEncoder passwordEncoder,EmailService emailService,RedisTemplate<String,String> redisTemplate ){
+        private final  JwtService jwtService;
+        private final RedisUtil redisUtil;
+    authService(UserRepository userRepository,PasswordEncoder passwordEncoder,EmailService emailService,JwtService jwtService,RedisUtil redisUtil ){
         this.userRepository=userRepository;
         this.passwordEncoder=passwordEncoder;
         this.emailService=emailService;
-        this.redisTemplate=redisTemplate;
+        this.jwtService=jwtService;
+        this.redisUtil=redisUtil;
     }
    public Boolean checkUserExists(String email,String userName){
 
@@ -38,7 +41,6 @@ public class authService {
        User thesaved= userRepository.save(savedUser);
         return thesaved;
    }
-
    public User Login(String email, String password){
 
         User user = userRepository.findByEmail(email) .orElseThrow(() -> new ApiException("error loging you in" , HttpStatus.BAD_REQUEST));
@@ -51,13 +53,15 @@ public class authService {
        return user;
    }
    @Transactional
-    public void processForgotPassword(String email){
+   public void processForgotPassword(String email){
 
         User user = userRepository.findByEmail(email).orElseThrow(()->new ApiException("Sorry a problem occured ",HttpStatus.BAD_REQUEST));
 
 
        String resetToken = UUID.randomUUID().toString();
-       redisTemplate.opsForValue().set("resetToken:" + resetToken, user.getId().toString(), Duration.ofMinutes(15));
+
+       redisUtil.saveResetTokenToredis( user.getId(),resetToken);
+
        String resetUrl = "http://localhost:8080/api/v1/auth/reset-password?token=" + resetToken;
 
        emailService.sendSimpleEmail(user.getEmail(), "Password reset token", "your password reset token is this url"+resetUrl);
@@ -67,7 +71,7 @@ public class authService {
     @Transactional
     public void processResetPassword(String token ,String newPassword,String confirmNewPassword){
 
-        String rawUserId = redisTemplate.opsForValue().get("resetToken:" + token);
+        String rawUserId = redisUtil.getResetTokenFromredis(token);
 
         // 2. Check null BEFORE parsing UUID
         if (rawUserId == null) {
@@ -79,11 +83,11 @@ public class authService {
         User user = userRepository.findById(userId).orElseThrow(()->new BadCredentialsException("Token expired or invalid"));
 
 
-
         if(!(newPassword.equals(confirmNewPassword))){
             throw new ApiException("Sorry passwords should match", HttpStatus.BAD_REQUEST);
 
         }
+        redisUtil.deleteFromRedis("resetToken",null,token);
         String newPasswordHash = passwordEncoder.encode(newPassword);
         user.setPasswordHash(newPasswordHash);
         userRepository.save(user);

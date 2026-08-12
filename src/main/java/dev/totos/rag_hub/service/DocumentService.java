@@ -4,6 +4,7 @@ import dev.totos.rag_hub.entity.Document;
 import dev.totos.rag_hub.exception.ApiException;
 import dev.totos.rag_hub.repository.DocumentRepository;
 import dev.totos.rag_hub.utils.ProcessSingleFileUtil;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
@@ -36,6 +37,7 @@ DocumentService(DocumentRepository documentRepository, ProcessSingleFileUtil Pro
     this.vectorStore=vectorStore;
 }
     @Transactional
+    @RateLimiter(name="ragVectorLimiter")
    public List<Document> ingestFile(UUID userId, List<MultipartFile> files) throws IOException {
         List<CompletableFuture<Document>> documents = new ArrayList<>();
         for(MultipartFile file :files) {
@@ -89,7 +91,7 @@ DocumentService(DocumentRepository documentRepository, ProcessSingleFileUtil Pro
         FilterExpressionBuilder b = new FilterExpressionBuilder();
         vectorStore.delete(
                 b.and(
-                        b.eq("userId", userId.toString()),
+                      b.eq("userId", userId.toString()),
                         b.eq("fileName", document.getFileName())
                 ).build()
         );

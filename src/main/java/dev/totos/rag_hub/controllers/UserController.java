@@ -20,21 +20,18 @@ import org.springframework.web.bind.annotation.*;
 import java.security.Principal;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.data.redis.core.RedisTemplate;
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
     private final UserService userService;
-    private final RedisTemplate<String,String> redisTemplate;
     private final authService authService;
-    UserController(UserService userService,RedisTemplate<String,String> redisTemplate,authService authService){
+    UserController(UserService userService,authService authService){
         this.userService=userService;
-        this.redisTemplate = redisTemplate;
         this.authService=authService;
     }
 
     @GetMapping("/me")
-    public ResponseEntity<Map<String,Object>> FindMe(@AuthenticationPrincipal Principal principal){
+    public ResponseEntity<Map<String,Object>> FindMe( Principal principal){
         UUID userId = UUID.fromString(principal.getName());
         User user =  userService.findMe(userId);
         SavedUser userDTO = new SavedUser(user.getId(), user.getUsername(), user.getEmail(), user.getCreatedAt().toString());
@@ -42,10 +39,10 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
     @DeleteMapping("/me")
-    public  ResponseEntity<?> DeleteMe (@AuthenticationPrincipal Principal principal, HttpServletResponse res){
+    public  ResponseEntity<?> DeleteMe ( Principal principal, HttpServletResponse res){
         //TODO  cascading vecoredb
         UUID userId = UUID.fromString(principal.getName());
-        redisTemplate.opsForValue().getAndDelete("refreshToken:" + userId);
+
         userService.deleteMe(userId);
         ResponseCookie accessCookie = ResponseCookie.from("accessToken",null).httpOnly(true).secure(false).maxAge(0).path("/").build();
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", null)
@@ -84,7 +81,7 @@ public class UserController {
     }
     @PutMapping("/me/password")
     public ResponseEntity<?> updatePassword(
-            @AuthenticationPrincipal Principal principal,
+             Principal principal,
             @Valid @RequestBody UserPasswordRecord record
     ) {
         UUID userId = UUID.fromString(principal.getName());

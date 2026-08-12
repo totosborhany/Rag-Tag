@@ -27,7 +27,7 @@ public class DocumentController {
     this.documentService=documentService;
 }
     @PostMapping
-    public ResponseEntity<Map<String,Object>> UploadDocument(@AuthenticationPrincipal Principal principal, @RequestParam("file") List<MultipartFile> files) throws IOException {
+    public ResponseEntity<Map<String,Object>> UploadDocument( Principal principal, @RequestParam("file") List<MultipartFile> files) throws IOException {
         if (files == null || files.isEmpty()) {
             throw new ApiException("Please upload at least one file", HttpStatus.BAD_REQUEST);
         }
@@ -43,7 +43,7 @@ public class DocumentController {
         return ResponseEntity.status(201).body(response);
     }
     @GetMapping
-    public ResponseEntity<Map<String,Object>> findMyDocuments(@AuthenticationPrincipal Principal principal){
+    public ResponseEntity<Map<String,Object>> findMyDocuments( Principal principal){
         UUID userId = UUID.fromString(principal.getName()) ;
         List<Document> myDocuments = new ArrayList<>();
         List<DocumentResponse> finalDocuments = new ArrayList<>();
@@ -57,7 +57,7 @@ public class DocumentController {
         return ResponseEntity.status(200).body(response);
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Map<String,Object>> findMyDocument(@AuthenticationPrincipal Principal principal,@PathVariable UUID id) {
+    public ResponseEntity<Map<String,Object>> findMyDocument( Principal principal,@PathVariable UUID id) {
         UUID userId = UUID.fromString(principal.getName()) ;
         Document returnedDocument = documentService.findMyDocument(userId,id);
 
@@ -68,7 +68,7 @@ public class DocumentController {
         return ResponseEntity.status(200).body(response);
     }
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteMyDocument(@AuthenticationPrincipal Principal principal,@PathVariable UUID id) {
+    public ResponseEntity<?> deleteMyDocument( Principal principal,@PathVariable UUID id) {
         UUID userId = UUID.fromString(principal.getName()) ;
          documentService.findMyDocumentAndDelete(userId,id);
 

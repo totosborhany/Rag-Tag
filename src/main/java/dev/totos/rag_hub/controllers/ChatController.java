@@ -22,29 +22,23 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @RequestMapping("/api/v1/chats")
 public class ChatController {
 
-  //  private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
     private  final ChatService chatService;
     ChatController(ChatService chatService){
         this.chatService=chatService;
-
     }
+
     @PostMapping
-    Flux<ChatResponse> SendChatMessage(@AuthenticationPrincipal Principal principal , @Valid @RequestBody ChatRequest request) throws IOException {
-      //  SseEmitter sseEmitter = new SseEmitter(Long.MAX_VALUE);
-       // emitters.add(sseEmitter);
-//        sseEmitter.onCompletion(() -> emitters.remove(sseEmitter));
-//        sseEmitter.onTimeout(() -> emitters.remove(sseEmitter));
-//        sseEmitter.onError((e) -> emitters.remove(sseEmitter));
+    Flux<ChatResponse> SendChatMessage( Principal principal , @Valid @RequestBody ChatRequest request) throws IOException {
         UUID userId = UUID.fromString(principal.getName());
 
-         //sseEmitter.send(SseEmitter.event().name("NEWS").data(chatResponse));;
-    return  chatService.processMessage(userId,request.message());
+    return  chatService.processIntialMessage(userId,request.message());
     }
     @DeleteMapping("/cache")
-    void DelteCache(@AuthenticationPrincipal Principal principal ){
+    ResponseEntity<Void> DelteCache( Principal principal ){
 
         UUID userId = UUID.fromString(principal.getName());
-
+        chatService.deleteMycachedAnswers(userId);
+        return ResponseEntity.noContent().build(); // 204 No Content
     }
 
 }

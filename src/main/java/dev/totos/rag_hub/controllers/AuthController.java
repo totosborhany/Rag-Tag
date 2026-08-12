@@ -72,24 +72,22 @@ public class AuthController {
         if (refreshToken == null || !jwtService.validateRefreshToken(refreshToken)) {
             throw new ApiException("Token expired, please log in", HttpStatus.UNAUTHORIZED);
         }
-
         UUID userId = jwtService.extractUserIdFromRefresh(refreshToken);
-        String accessToken = jwtService.generateAccessToken(userId);
 
-        // Only renewing the access cookie here
-        res.addHeader(HttpHeaders.SET_COOKIE, cookieUtils.createAccessCookie(accessToken).toString());
-
+        Boolean isValidRedis =  jwtService.validateRefreshTokenWithRedis(refreshToken,userId);
+        if(!isValidRedis){
+            throw new ApiException("Sorry invalid token please login",HttpStatus.UNAUTHORIZED);
+        }
+        setAuthCookiesAndRedis(userId,res);
         return ResponseEntity.ok(Map.of("message", "Token successfully renewed"));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletResponse res, @AuthenticationPrincipal Principal principal) {
+    public ResponseEntity<?> logout(HttpServletResponse res,  Principal principal) {
         UUID uuid = UUID.fromString(principal.getName());
 
-        // 1. Delete from Redis via JwtService
         jwtService.deleteRefreshTokenFromRedis(uuid);
 
-        // 2. Clear cookies
         res.addHeader(HttpHeaders.SET_COOKIE, cookieUtils.clearAccessCookie().toString());
         res.addHeader(HttpHeaders.SET_COOKIE, cookieUtils.clearRefreshCookie().toString());
 
@@ -131,6 +129,7 @@ public class AuthController {
         String refreshToken = jwtService.generateRefreshToken(userId);
 
         jwtService.saveRefreshTokenToRedis(userId, refreshToken);
+
 
         res.addHeader(HttpHeaders.SET_COOKIE, cookieUtils.createAccessCookie(accessToken).toString());
         res.addHeader(HttpHeaders.SET_COOKIE, cookieUtils.createRefreshCookie(refreshToken).toString());

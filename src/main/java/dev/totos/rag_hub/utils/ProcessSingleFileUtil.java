@@ -36,7 +36,6 @@ public class ProcessSingleFileUtil {
         try {
             TikaDocumentReader tikaDocumentReader = new TikaDocumentReader(resource);
             List<org.springframework.ai.document.Document> rawDocuments = tikaDocumentReader.get();
-
             TokenTextSplitter textSplitter = TokenTextSplitter.builder().withChunkSize(500).withMinChunkSizeChars(400).build();
             List<org.springframework.ai.document.Document> chunkedDocuments = textSplitter.apply(rawDocuments);
             if(chunkedDocuments.size()==0){
@@ -54,6 +53,7 @@ public class ProcessSingleFileUtil {
             if (tempFile != null && tempFile.exists()) {
                 tempFile.delete();
             }
+
         }
 
         return   CompletableFuture.completedFuture(finalDocument);

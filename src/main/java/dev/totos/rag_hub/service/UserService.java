@@ -4,6 +4,8 @@ import dev.totos.rag_hub.entity.User;
 import dev.totos.rag_hub.exception.ApiException;
 import dev.totos.rag_hub.repository.DocumentRepository;
 import dev.totos.rag_hub.repository.UserRepository;
+import dev.totos.rag_hub.utils.RedisUtil;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -18,11 +20,15 @@ public class UserService {
     private  final UserRepository userRepository;
     private final DocumentRepository documentRepository;
     private final PasswordEncoder passwordEncoder;
-
-    UserService(UserRepository userRepository,DocumentRepository documentRepository,PasswordEncoder passwordEncoder){
+    private final VectorStore vectorStore;
+    private final RedisUtil redisUtil;
+    UserService(UserRepository userRepository,DocumentRepository documentRepository,PasswordEncoder passwordEncoder,VectorStore vectorStore,RedisUtil redisUtil){
         this.userRepository=userRepository;
         this.documentRepository = documentRepository;
         this.passwordEncoder = passwordEncoder;
+        this.vectorStore=vectorStore;
+        this.redisUtil=redisUtil;
+
     }
 
     public User findMe(UUID uuid){
@@ -30,12 +36,16 @@ public class UserService {
         return myUser;
     }
     @Transactional
-  public  void deleteMe(UUID uuid){if (!userRepository.existsById(uuid)) {
+    public  void deleteMe(UUID uuid){
+        if (!userRepository.existsById(uuid)) {
         throw new ApiException("User not found or already deleted", HttpStatus.NOT_FOUND);
-    }
+            }
+            FilterExpressionBuilder b = new FilterExpressionBuilder();
             userRepository.deleteById(uuid);
+            redisUtil.deleteFromRedis("refreshToken",uuid,null);
+            vectorStore.delete( b.eq("userId", uuid.toString()).build());
             documentRepository.deleteByUserId(uuid);
-    }
+        }
 
     @Transactional
     public User updateUser(UUID id,String email,String username){
