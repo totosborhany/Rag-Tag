@@ -35,8 +35,6 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
 
         String clientIp = extractClientIp(request);
         String redisKey = "rate_limit:ip:" + clientIp;
-
-        // Bucket Configuration: 10 requests per 1 minute
         BucketConfiguration bucketConfig = BucketConfiguration.builder()
                 .addLimit(Bandwidth.builder()
                         .capacity(10)
@@ -44,7 +42,6 @@ public class IpRateLimitingFilter extends OncePerRequestFilter {
                         .build())
                 .build();
 
-        // Retrieve or initialize bucket from Redis
         ConsumptionProbe probe = proxyManager.builder()
                 .build(redisKey, () -> bucketConfig)
                 .tryConsumeAndReturnRemaining(1);

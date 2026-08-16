@@ -12,13 +12,17 @@ public class EmailService {
     private JavaMailSender mailSender;
 
     public void sendSimpleEmail(String to, String subject, String body) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("Rag Hub");
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("ahmedaboelshuur@gmail.com");
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
 
-        mailSender.send(message);
+            mailSender.send(message);
+        }catch (Exception ex){
+            throw new RuntimeException("Failed to send email", ex);
+        }
     }
 }
 

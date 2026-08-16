@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
+import java.util.List;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
@@ -36,8 +38,17 @@ public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(request -> {
+                    // Ensure this is org.springframework.web.cors.CorsConfiguration
+                    org.springframework.web.cors.CorsConfiguration opt = new org.springframework.web.cors.CorsConfiguration();
+                    opt.setAllowedOrigins(List.of("*"));
+                    opt.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                    opt.setAllowedHeaders(List.of("*"));
+                    opt.setAllowCredentials(true);
 
-                .cors(Customizer.withDefaults())
+                    return opt;
+                }))
+
 
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -48,14 +59,16 @@ public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
                         .requestMatchers("/api/v1/auth/**", "/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(ipRateLimitingFilter, JwtAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(ipRateLimitingFilter, JwtAuthenticationFilter.class.getClass().equals(JwtAuthenticationFilter.class) ? UsernamePasswordAuthenticationFilter.class : UsernamePasswordAuthenticationFilter.class)
 
-                // Security Headers
+
                 .headers(headers -> headers
                         .frameOptions(HeadersConfigurer.FrameOptionsConfig::deny)
                 )
-
+                .securityContext(security -> security
+                        .requireExplicitSave(false)
+                )
                 .build();
     }
 

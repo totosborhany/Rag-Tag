@@ -43,7 +43,7 @@ public class authService {
    }
    public User Login(String email, String password){
 
-        User user = userRepository.findByEmail(email) .orElseThrow(() -> new ApiException("error loging you in" , HttpStatus.BAD_REQUEST));
+        User user = userRepository.findByEmail(email) .orElseThrow(() -> new ApiException("Invalid email or password" , HttpStatus.UNAUTHORIZED));
        Boolean match = passwordEncoder.matches(password,user.getPasswordHash());
         if(!match){
             throw new ApiException("Invalid email or password", HttpStatus.UNAUTHORIZED);
@@ -63,8 +63,8 @@ public class authService {
        redisUtil.saveResetTokenToredis( user.getId(),resetToken);
 
        String resetUrl = "http://localhost:8080/api/v1/auth/reset-password?token=" + resetToken;
-
-       emailService.sendSimpleEmail(user.getEmail(), "Password reset token", "your password reset token is this url"+resetUrl);
+       System.out.println(resetUrl);
+       emailService.sendSimpleEmail(user.getEmail(), "Password reset token", "your password reset token is this url :   \n "+resetUrl);
 
 
     }

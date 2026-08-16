@@ -40,7 +40,6 @@ public class UserController {
     }
     @DeleteMapping("/me")
     public  ResponseEntity<?> DeleteMe ( Principal principal, HttpServletResponse res){
-        //TODO  cascading vecoredb
         UUID userId = UUID.fromString(principal.getName());
 
         userService.deleteMe(userId);
@@ -57,7 +56,7 @@ public class UserController {
     }
     @PutMapping("/me")
     public ResponseEntity<Map<String, Object>> updateUser(
-            @AuthenticationPrincipal Principal principal,
+             Principal principal,
             @Valid @RequestBody UserUpdateRecord record
     ) {
         if (record.email() == null && record.username() == null) {
@@ -80,7 +79,7 @@ public class UserController {
         ));
     }
     @PutMapping("/me/password")
-    public ResponseEntity<?> updatePassword(
+    public ResponseEntity<Map<String,Object>> updatePassword(
              Principal principal,
             @Valid @RequestBody UserPasswordRecord record
     ) {

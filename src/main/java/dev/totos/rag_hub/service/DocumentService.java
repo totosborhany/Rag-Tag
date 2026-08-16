@@ -9,6 +9,8 @@ import org.springframework.ai.reader.tika.TikaDocumentReader;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.core.io.FileSystemResource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,14 +77,15 @@ DocumentService(DocumentRepository documentRepository, ProcessSingleFileUtil Pro
             );
         }
     }
-    public List<Document> findMyDocuments(UUID userId){
-    List <Document> myDocuments = new ArrayList<>();
-    myDocuments= documentRepository.findByUserId(userId);
+    public Page<Document> findMyDocuments(UUID userId, Pageable pageable){
+        Page<Document> myDocuments = null;
+    myDocuments= documentRepository.findByUserId(userId,pageable);
     return myDocuments;
     }
     public Document findMyDocument(UUID userId,UUID id){
     Document myDocument = documentRepository.findDocumentByIdAndUserId(userId,id) .orElseThrow(() -> new ApiException("Document not found or access denied", HttpStatus.NOT_FOUND));
     return myDocument;
+
 }
     @Transactional
     public void findMyDocumentAndDelete(UUID userId, UUID documentId) {

@@ -27,9 +27,8 @@ public class ChatMessage {
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
-
-    @Column(name = "tokens_used")
-    private Integer tokensUsed = 0;
+    @Column(name = "parent_message_id")
+    private UUID parentMessageId;;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -42,10 +41,22 @@ public class ChatMessage {
     // Constructors, Getters, and Setters
     public ChatMessage() {}
 
-    public ChatMessage(MessageRole role, String content, Integer tokensUsed) {
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public UUID getParentMessageId() {
+        return parentMessageId;
+    }
+
+    public void setParentMessageId(UUID parentMessageId) {
+        this.parentMessageId = parentMessageId;
+    }
+
+    public ChatMessage(MessageRole role, String content, Integer tokenUsed, Conversation conversation) {
         this.role = role;
         this.content = content;
-        this.tokensUsed = tokensUsed;
+        this.conversation=conversation;
     }
 
     public UUID getId() { return id; }
@@ -55,7 +66,5 @@ public class ChatMessage {
     public void setRole(MessageRole role) { this.role = role; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
-    public Integer getTokensUsed() { return tokensUsed; }
-    public void setTokensUsed(Integer tokensUsed) { this.tokensUsed = tokensUsed; }
     public Instant getCreatedAt() { return createdAt; }
 }

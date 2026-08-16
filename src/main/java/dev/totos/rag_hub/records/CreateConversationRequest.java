@@ -4,7 +4,7 @@ import jakarta.annotation.Nullable;
 import jakarta.validation.constraints.NotBlank;
 
 public record CreateConversationRequest(
-        @NotBlank(message = "Password is required")
+        @NotBlank(message = "title is required")
         String title
 
 ) {

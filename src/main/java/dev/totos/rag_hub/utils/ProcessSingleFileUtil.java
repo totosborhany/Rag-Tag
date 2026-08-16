@@ -39,11 +39,11 @@ public class ProcessSingleFileUtil {
             TokenTextSplitter textSplitter = TokenTextSplitter.builder().withChunkSize(500).withMinChunkSizeChars(400).build();
             List<org.springframework.ai.document.Document> chunkedDocuments = textSplitter.apply(rawDocuments);
             if(chunkedDocuments.size()==0){
-                throw new ApiException(file.getOriginalFilename()+" contains no extractable text",HttpStatus.UNPROCESSABLE_CONTENT);
-            }
+                throw new ApiException(file.getOriginalFilename() + " contains no extractable text", HttpStatus.UNPROCESSABLE_ENTITY);            }
             for (org.springframework.ai.document.Document doc : chunkedDocuments) {
                 doc.getMetadata().put("userId", userId.toString());
                 doc.getMetadata().put("fileName", file.getOriginalFilename());
+                doc.getMetadata().put("type","NORMAL");
             }
             User user = userRepository.findById(userId).orElseThrow(() -> new ApiException("User not found", HttpStatus.BAD_REQUEST));
             vectorStore.add(chunkedDocuments);
