@@ -24,7 +24,7 @@ public class SaveToCacheUtil {
 
     @Async
 
-    public void saveToChach(String message, UUID userId, String answer, List<String> sources, String id) {
+    public void saveToChach(String message, UUID userId, String answer, List<String> sources, String id,String cid) {
         try {
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("userId", userId != null ? userId.toString() : null);
@@ -32,6 +32,7 @@ public class SaveToCacheUtil {
             metadata.put("answer", answer != null ? answer : "");
             metadata.put("sources", sources != null ? sources : List.of());
             metadata.put("id", id != null ? id.toString() : null);
+            metadata.put("conversationId", cid != null ? cid : "");
 
             Document toBeSaved = new Document(message, metadata);
 

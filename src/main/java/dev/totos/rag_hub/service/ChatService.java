@@ -224,7 +224,7 @@ public class ChatService {
                                     redisTemplate.opsForList().trim(redisKey, -10, -1);
                                     redisTemplate.expire(redisKey, java.time.Duration.ofDays(7));
 
-                                    saveToCacheUtil.saveToChach(message, userId, fullAnswer, sources,savedChatMessage.getId().toString());
+                                    saveToCacheUtil.saveToChach(message, userId, fullAnswer, sources,savedChatMessage.getId().toString(),conversationId.toString());
 
                                     ChatMessage llmChatMessage = new ChatMessage(
                                             MessageRole.ASSISTANT,

@@ -62,11 +62,23 @@ public class ConversationService {
     @Transactional
     public void deleteConversation(UUID userId, UUID conversationId) {
         Conversation conversation = conversationRepository.findByIdAndUserId(conversationId, userId)
-                .orElseThrow(() -> new ApiException("Conversation not found or does not belong to user",HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new ApiException("Conversation not found or does not belong to user", HttpStatus.NOT_FOUND));
 
         conversationRepository.delete(conversation);
-    }
 
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                String redisKey = "chat:history:" + conversationId;
+                redisTemplate.delete(redisKey);
+
+                FilterExpressionBuilder b = new FilterExpressionBuilder();
+                vectorStore.delete(
+                        b.eq("conversationId", conversationId.toString()).build()
+                );
+            }
+        });
+    }
     public cursorPageResponse getMessagesForConversation(
             UUID userId,
             UUID conversationId,

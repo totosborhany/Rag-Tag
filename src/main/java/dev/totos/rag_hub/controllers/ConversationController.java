@@ -86,6 +86,7 @@ public class ConversationController {
 
         UUID userId = UUID.fromString(principal.getName());
         conversationService.deleteConversation(userId, id);
+
         return ResponseEntity.noContent().build();
     }
     @GetMapping("/{conversationId}/messages")
