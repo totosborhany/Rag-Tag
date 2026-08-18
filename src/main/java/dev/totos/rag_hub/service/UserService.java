@@ -44,6 +44,7 @@ public class UserService {
             userRepository.deleteById(uuid);
             redisUtil.deleteFromRedis("refreshToken",uuid,null);
             vectorStore.delete( b.eq("userId", uuid.toString()).build());
+
             documentRepository.deleteByUserId(uuid);
         }
 

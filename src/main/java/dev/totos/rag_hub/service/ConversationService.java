@@ -102,18 +102,15 @@ public class ConversationService {
             );
         }
 
-        // 2. Check for next page
         boolean hasNext = rawMessages.size() > limit;
         List<ChatMessage> pageMessages = hasNext
                 ? rawMessages.subList(0, limit)
                 : rawMessages;
 
-        // 3. Get cursor from the last message in the sliced page
         Instant nextCursor = hasNext
                 ? pageMessages.get(pageMessages.size() - 1).getCreatedAt()
                 : null;
 
-        // 4. Map entities to DTOs
         List<ChatMessageDto> messageDtos = pageMessages.stream()
                 .map(m -> new ChatMessageDto(
                         m.getId(),

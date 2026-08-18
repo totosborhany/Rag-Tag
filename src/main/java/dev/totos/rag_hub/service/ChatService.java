@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 @Service
@@ -50,8 +51,9 @@ public class ChatService {
         private final ChatMessageRepository chatMessageRepository;
         private final ConversationRepository conversationRepository;
         private final AiWbClient aiWebClient;
+        private final TokenUsageLimitQuota tokenUsageLimitQuota;
     private final ObjectMapper objectMapper;
-        ChatService(AiWbClient aiWebClient,ObjectMapper objectMapper,VectorStore vectorStore,ChatClient.Builder chatClientBuilder,ConversationRepository conversationRepository,ChatMessageRepository chatMessageRepository,SaveToCacheUtil saveToCacheUtil,ReactiveRedisTemplate<String,String> redisTemplate) {
+        ChatService(AiWbClient aiWebClient,ObjectMapper objectMapper,VectorStore vectorStore,ChatClient.Builder chatClientBuilder,ConversationRepository conversationRepository,ChatMessageRepository chatMessageRepository,SaveToCacheUtil saveToCacheUtil,ReactiveRedisTemplate<String,String> redisTemplate,TokenUsageLimitQuota tokenUsageLimitQuota) {
         this.chatMessageRepository=chatMessageRepository;
         this.chatClient=chatClientBuilder.build();
         this.vectorStore=vectorStore;
@@ -60,16 +62,25 @@ public class ChatService {
         this.conversationRepository=conversationRepository;
         this.aiWebClient=aiWebClient;
         this.objectMapper=objectMapper;
+        this.tokenUsageLimitQuota=tokenUsageLimitQuota;
         }
         @RateLimiter(name = "ragLlmLimiter" , fallbackMethod = "processMessageFallback")
         public Flux<ServerSentEvent<Object>> processIntialMessage(UUID userId, String message, UUID conversationId) {
+            return checkCache(message, userId, conversationId)
+                    .switchIfEmpty(
+                            tokenUsageLimitQuota.surpasedTokenUsageLimitQuota(userId)
+                                    .flatMapMany(surpassed -> {
+                                        if (Boolean.TRUE.equals(surpassed)) {
+                                            return Flux.error(new ApiException(
+                                                    "Sorry you have reached your token limit",
+                                                    HttpStatus.BAD_REQUEST
+                                            ));
+                                        }
 
-            return  checkCache(message, userId,conversationId).switchIfEmpty(
-                    Flux.defer(
-                            ()->
-                                    processMessage(userId,message,conversationId)
-                    ).subscribeOn(Schedulers.boundedElastic())
-            );
+                                        return Flux.defer(() -> processMessage(userId, message, conversationId))
+                                                .subscribeOn(Schedulers.boundedElastic());
+                                    })
+                    );
         }
     public Flux<ServerSentEvent<Object>> processMessageFallback(UUID userId, String message, UUID conversationId, Throwable t) {
         return Flux.error(new ApiException(
@@ -112,8 +123,6 @@ public class ChatService {
             redisTemplate.opsForList().rightPush(redisKey, "Assistant: " + answer);
             redisTemplate.opsForList().trim(redisKey, -10, -1);
             redisTemplate.expire(redisKey, java.time.Duration.ofDays(7));
-
-
             return Flux.just(sourcesEvent, deltaStream)
                     .doOnCancel(() -> {
                         logger.info("Client canceled streaming response for conversation {}", conversationId);
@@ -130,6 +139,7 @@ public class ChatService {
     }).subscribeOn(Schedulers.boundedElastic()).flatMapMany(flux->flux);
     }
         private Flux<ServerSentEvent<Object>> processMessage(UUID userId, String message, UUID conversationId){
+
          FilterExpressionBuilder b = new FilterExpressionBuilder();
          SearchRequest searchRequest = SearchRequest.builder()
                  .query(message)
@@ -157,11 +167,13 @@ public class ChatService {
                  .toList();
             String redisKey = "chat:history:" + conversationId;
             List<String> historyList = redisTemplate.opsForList().range(redisKey, 0, -1).collectList().block();
-
+            ServerSentEvent<Object> tokenEvent ;
             String historyText = (historyList == null || historyList.isEmpty())
                     ? "No previous conversation history."
                     : String.join("\n", historyList);
-
+          AtomicReference< Long> totalTokens=new AtomicReference<>();
+            AtomicReference< Long> promptTokens = new AtomicReference<>();
+            AtomicReference< Long>completionTokens = new AtomicReference<>();
          String systemPrompt = """
                 You are a helpful assistant for answering questions based on uploaded documents.
                 Use ONLY the provided context below to answer the user's question.
@@ -172,9 +184,9 @@ public class ChatService {
                 {context}
                 """;
          StringBuilder finalAnswer = new StringBuilder();
-         AtomicInteger tokensUsed = new AtomicInteger();
             Map<String, Object> requestPayload = Map.of(
                     "model", myModel,
+                    "stream_options", Map.of("include_usage", true) ,
                     "stream", true,
                     "messages", List.of(
                             Map.of("role", "system", "content", systemPrompt + " Context: " + (context.isBlank() ? "No matching documents found." : context) + " History: " + (historyText.isBlank() ? "No history found." : historyText)),
@@ -202,8 +214,15 @@ public class ChatService {
 
                     .mapNotNull(chunk -> {
                         try {
+
                             JsonNode node = objectMapper.readTree(chunk);
                             JsonNode contentNode = node.path("choices").path(0).path("delta").path("content");
+                            JsonNode usageNode = node.path("usage");
+                            if (!usageNode.isMissingNode() && !usageNode.isNull()) {
+                                promptTokens.set(usageNode.path("prompt_tokens").asLong(0));
+                                completionTokens.set(usageNode.path("completion_tokens").asLong(0));
+                                totalTokens.set(usageNode.path("total_tokens").asLong(0));
+                            }
                             return contentNode.isMissingNode() ? null : contentNode.asText();
                         } catch (Exception e) {
                             logger.warn("Failed to parse chunk: {}", chunk, e);
@@ -213,10 +232,10 @@ public class ChatService {
                     .filter(text -> text != null && !text.isEmpty())
                     .doOnNext(text -> {
                         finalAnswer.append(text);
-                        tokensUsed.getAndIncrement();
                     })
                     .doOnComplete(() -> {
                         Mono.fromRunnable(() -> {
+                                    tokenUsageLimitQuota.updateTokenUsageLimitQuota(userId,totalTokens.get());
                                     String fullAnswer = finalAnswer.toString();
 
                                     redisTemplate.opsForList().rightPush(redisKey, "User: " + message);

@@ -28,6 +28,7 @@ dependencies {
 	implementation 'org.springframework.ai:spring-ai-pgvector-store-spring-boot-starter'
 	implementation 'org.springframework.ai:spring-ai-tika-document-reader'
 // build.gradle
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 	implementation 'org.springframework.boot:spring-boot-starter-webflux'
 	// --- Core Spring Boot Starters ---
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -39,7 +40,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-aop'
 	implementation 'org.springframework.boot:spring-boot-starter-mail'
-
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
 	// --- JWT (jjwt) ---
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'

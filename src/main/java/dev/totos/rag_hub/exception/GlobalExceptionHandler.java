@@ -14,12 +14,13 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletionException;import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.context.request.async.AsyncRequestNotUsableException;
-
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @Slf4j
 @RestControllerAdvice
@@ -44,16 +45,25 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex, HttpServletRequest request) {
-        // Log the real stack trace internally so you can debug it
-        log.error("Unhandled exception occurred at path: {}", request.getRequestURI(), ex);
-        ErrorResponse body = ErrorResponse.of(
-                "An unexpected internal error occurred.",
-                HttpStatus.INTERNAL_SERVER_ERROR,
-                request.getRequestURI()
-        );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex , HttpServletRequest request){
+        ErrorResponse response = ErrorResponse.of("Sorry "+request.getRequestURI()+" isn't found",HttpStatus.NOT_FOUND,request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+    }
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleMaxSizeException(MaxUploadSizeExceededException exc) {
+        return ResponseEntity
+                .status(HttpStatus.PAYLOAD_TOO_LARGE)
+                .body(Map.of(
+                        "error", "Payload Too Large",
+                        "message", "Upload exceeds allowed limit (Max 10MB per file, 10MB total request size)."
+                ));
+    }
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex,HttpServletRequest request){
+       ErrorResponse response = ErrorResponse.of("Sorry "+ request.getRequestURI() +" isn't found",HttpStatus.NOT_FOUND,request.getRequestURI());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
     }
     @ExceptionHandler(AuthenticationException.class)
     public ResponseEntity<ErrorResponse> handleAuthenticationException(
@@ -112,5 +122,16 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ErrorResponse> handleGeneralException(Exception ex, HttpServletRequest request) {
+        // Log the real stack trace internally so you can debug it
+        log.error("Unhandled exception occurred at path: {}", request.getRequestURI(), ex);
+        ErrorResponse body = ErrorResponse.of(
+                "An unexpected internal error occurred.",
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                request.getRequestURI()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

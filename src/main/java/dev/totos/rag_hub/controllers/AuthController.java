@@ -9,6 +9,7 @@ import dev.totos.rag_hub.records.SavedUser;
 import dev.totos.rag_hub.service.JwtService;
 import dev.totos.rag_hub.service.authService; // Note: Should ideally be AuthService (capital A)
 import dev.totos.rag_hub.utils.CookieUtils;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -66,7 +67,9 @@ public class AuthController {
                 "user", userDTO
         ));
     }
-
+    @Operation(
+            summary = "Renew refresh token"
+    )
     @PostMapping("/refresh")
     public ResponseEntity<?> refresh(@CookieValue(name = "refreshToken", required = false) String refreshToken, HttpServletResponse res) {
         if (refreshToken == null || !jwtService.validateRefreshToken(refreshToken)) {
@@ -81,7 +84,9 @@ public class AuthController {
         setAuthCookiesAndRedis(userId,res);
         return ResponseEntity.ok(Map.of("message", "Token successfully renewed"));
     }
-
+    @Operation(
+            summary = "log out"
+    )
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse res,  Principal principal) {
         UUID uuid = UUID.fromString(principal.getName());

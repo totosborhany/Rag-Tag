@@ -3,6 +3,7 @@ package dev.totos.rag_hub.controllers;
 import dev.totos.rag_hub.records.*;
 import dev.totos.rag_hub.service.ChatService;
 import dev.totos.rag_hub.service.ConversationService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,9 @@ public class ConversationController {
 
             this.chatService=chatService;
     }
-
+    @Operation(
+            summary = "Creates conversation"
+    )
     @PostMapping
     public ResponseEntity<ConversationDto> createConversation(
              Principal principal,
@@ -50,7 +53,9 @@ public class ConversationController {
         ConversationDto conversation = conversationService.createConversation(userId, request.title());
         return ResponseEntity.status(HttpStatus.CREATED).body(conversation);
     }
-
+    @Operation(
+            summary = "Get all my conversations"
+    )
     @GetMapping
     public ResponseEntity<Map<String, Object>> getUserConversations(
             Principal principal,
@@ -70,6 +75,9 @@ public class ConversationController {
 
         return ResponseEntity.ok(response);
     }
+    @Operation(
+            summary = "Get single conversation"
+    )
     @GetMapping("/{id}")
     public ResponseEntity<ConversationDto> getConversationById(
             @PathVariable UUID id,
@@ -79,6 +87,9 @@ public class ConversationController {
         ConversationDto conversation = conversationService.getConversationForUser(id, userId);
         return ResponseEntity.ok(conversation);
     }
+    @Operation(
+            summary = "delete single conversation"
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteConversation(
              Principal principal,
@@ -89,6 +100,9 @@ public class ConversationController {
 
         return ResponseEntity.noContent().build();
     }
+    @Operation(
+            summary = "Get conversation messages"
+    )
     @GetMapping("/{conversationId}/messages")
     public ResponseEntity<cursorPageResponse> getConversationMessages(
              Principal principal,
@@ -103,6 +117,9 @@ public class ConversationController {
 
         return ResponseEntity.ok(response);
     }
+    @Operation(
+            summary = "Send prompt to llm"
+    )
     @PostMapping(path = "/{conversationId}/messages", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<ServerSentEvent<Object>> sendChatMessage(
             Principal principal,
@@ -116,6 +133,9 @@ public class ConversationController {
                 .doOnError(ex -> log.debug("Error during SSE stream: {}", ex.getMessage()))
                 .doOnComplete(() -> log.debug("SSE stream completed successfully"));
     }
+    @Operation(
+            summary = "Delete message"
+    )
     @DeleteMapping("/{conversationId}/messages/{messageId}")
     public ResponseEntity<Void> deleteMessage(
              Principal userIdStr,
@@ -127,7 +147,9 @@ public class ConversationController {
         return ResponseEntity.noContent().build();
     }
 
-
+    @Operation(
+            summary = "Delete my cached questions and answers"
+    )
     @DeleteMapping("/cache")
     public ResponseEntity<Void> deleteConversationCache(
             Principal principal) {

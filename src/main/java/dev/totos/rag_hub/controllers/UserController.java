@@ -8,6 +8,7 @@ import dev.totos.rag_hub.records.UserUpdateRecord;
 import dev.totos.rag_hub.repository.UserRepository;
 import dev.totos.rag_hub.service.UserService;
 import dev.totos.rag_hub.service.authService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
@@ -29,7 +30,9 @@ public class UserController {
         this.userService=userService;
         this.authService=authService;
     }
-
+    @Operation(
+            summary = "Get my data"
+    )
     @GetMapping("/me")
     public ResponseEntity<Map<String,Object>> FindMe( Principal principal){
         UUID userId = UUID.fromString(principal.getName());
@@ -38,6 +41,10 @@ public class UserController {
         Map<String,Object> response = Map.of("message","user retured successfully","user",userDTO);
         return ResponseEntity.ok(response);
     }
+    @Operation(
+            summary = "Deletes me along with my documents and chat messages "
+    )
+
     @DeleteMapping("/me")
     public  ResponseEntity<?> DeleteMe ( Principal principal, HttpServletResponse res){
         UUID userId = UUID.fromString(principal.getName());
@@ -54,6 +61,9 @@ public class UserController {
         res.addHeader(HttpHeaders.SET_COOKIE,refreshCookie.toString());
         return ResponseEntity.noContent().build();
     }
+    @Operation(
+            summary = "Update my data except password"
+    )
     @PutMapping("/me")
     public ResponseEntity<Map<String, Object>> updateUser(
              Principal principal,
@@ -78,6 +88,9 @@ public class UserController {
                 "user", userDTO
         ));
     }
+    @Operation(
+            summary = "Update my Password"
+    )
     @PutMapping("/me/password")
     public ResponseEntity<Map<String,Object>> updatePassword(
              Principal principal,

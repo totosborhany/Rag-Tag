@@ -6,11 +6,13 @@ import dev.totos.rag_hub.exception.ApiException;
 import dev.totos.rag_hub.records.DocumentResponse;
 import dev.totos.rag_hub.service.ChatService;
 import dev.totos.rag_hub.service.DocumentService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -27,16 +29,25 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/documents")
 public class DocumentController {
+    private static final int MAX_FILE_COUNT = 5;
+
     private final DocumentService documentService;
     private final ChatService chatService;
     DocumentController(DocumentService documentService,ChatService chatService){
     this.documentService=documentService;
 this.chatService=chatService;
     }
-    @PostMapping
+    @Operation(
+            summary = "Upload document to get embedded"
+    )
+    @PostMapping( consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String,Object>> UploadDocument( Principal principal, @RequestParam("file") List<MultipartFile> files) throws IOException {
         if (files == null || files.isEmpty()) {
             throw new ApiException("Please upload at least one file", HttpStatus.BAD_REQUEST);
+        }
+
+        if(files.size()>MAX_FILE_COUNT){
+            throw new ApiException("Sorry you can only upload 5 files",HttpStatus.BAD_REQUEST);
         }
         UUID userId = UUID.fromString(principal.getName());
         List<Document> documentList = documentService.ingestFile(userId,files);
@@ -50,6 +61,9 @@ this.chatService=chatService;
                 "Documents : ",documentResponse);
         return ResponseEntity.status(201).body(response);
     }
+    @Operation(
+            summary = "Get all my uploaded document"
+    )
     @GetMapping
     public ResponseEntity<Map<String, Object>> findMyDocuments(
             Principal principal,
@@ -78,6 +92,9 @@ this.chatService=chatService;
 
         return ResponseEntity.ok(response);
     }
+    @Operation(
+            summary = "Get single document"
+    )
     @GetMapping("/{id}")
     public ResponseEntity<Map<String,Object>> findMyDocument( Principal principal,@PathVariable UUID id) {
         UUID userId = UUID.fromString(principal.getName()) ;
@@ -89,6 +106,9 @@ this.chatService=chatService;
                 "Document : ",finalDocument);
         return ResponseEntity.status(200).body(response);
     }
+    @Operation(
+            summary = "Delete single document with cascading"
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteMyDocument( Principal principal,@PathVariable UUID id) {
         UUID userId = UUID.fromString(principal.getName()) ;
