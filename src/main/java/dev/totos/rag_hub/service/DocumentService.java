@@ -39,7 +39,6 @@ DocumentService(DocumentRepository documentRepository, ProcessSingleFileUtil Pro
     this.vectorStore=vectorStore;
 }
     @Transactional
-    @RateLimiter(name="ragVectorLimiter")
    public List<Document> ingestFile(UUID userId, List<MultipartFile> files) throws IOException {
         List<CompletableFuture<Document>> documents = new ArrayList<>();
         for(MultipartFile file :files) {

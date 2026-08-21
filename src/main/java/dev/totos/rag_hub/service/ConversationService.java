@@ -103,6 +103,7 @@ public class ConversationService {
         }
 
         boolean hasNext = rawMessages.size() > limit;
+
         List<ChatMessage> pageMessages = hasNext
                 ? rawMessages.subList(0, limit)
                 : rawMessages;

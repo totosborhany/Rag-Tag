@@ -115,7 +115,7 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Map<String, String>> resetPassword(
             @RequestParam("token") String token,
-            @RequestBody ResetPasswordRecord body
+            @RequestBody@Valid ResetPasswordRecord body
     ) {
         String newPassword = body.newPassword();
         String confirmNewPassword = body.confirmNewPassword();

@@ -47,7 +47,7 @@ public class ConversationController {
     @PostMapping
     public ResponseEntity<ConversationDto> createConversation(
              Principal principal,
-            @RequestBody CreateConversationRequest request) {
+            @RequestBody @Valid CreateConversationRequest request) {
 
         UUID userId = UUID.fromString(principal.getName());
         ConversationDto conversation = conversationService.createConversation(userId, request.title());
@@ -108,7 +108,7 @@ public class ConversationController {
              Principal principal,
             @PathVariable UUID conversationId,
             @RequestParam(required = false) Instant cursor,
-            @RequestParam(defaultValue = "20") int limit) {
+            @RequestParam(defaultValue = "5") int limit) {
 
         UUID userId = UUID.fromString(principal.getName());
 

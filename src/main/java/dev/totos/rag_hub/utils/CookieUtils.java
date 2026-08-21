@@ -11,7 +11,7 @@ public class CookieUtils {
     public ResponseCookie createAccessCookie(String token) {
         return ResponseCookie.from("accessToken", token)
                 .httpOnly(true)
-                .secure(false) // Set to true in production
+                .secure(true)
                 .path("/")
                 .maxAge(Duration.ofMinutes(15))
                 .sameSite("Strict")
@@ -21,7 +21,7 @@ public class CookieUtils {
     public ResponseCookie createRefreshCookie(String token) {
         return ResponseCookie.from("refreshToken", token)
                 .httpOnly(true)
-                .secure(false) // Set to true in production
+                .secure(true)
                 .path("/")
                 .maxAge(Duration.ofDays(7))
                 .sameSite("Strict")
@@ -31,9 +31,9 @@ public class CookieUtils {
     public ResponseCookie clearAccessCookie() {
         return ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
-                .maxAge(0) // Instantly deletes the cookie
+                .maxAge(0)
                 .sameSite("Strict")
                 .build();
     }
@@ -41,7 +41,7 @@ public class CookieUtils {
     public ResponseCookie clearRefreshCookie() {
         return ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0) // Instantly deletes the cookie
                 .sameSite("Strict")

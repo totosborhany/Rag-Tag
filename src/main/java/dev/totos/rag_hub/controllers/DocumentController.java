@@ -71,7 +71,6 @@ this.chatService=chatService;
     ) {
         UUID userId = UUID.fromString(principal.getName());
 
-        // Call .map() directly on the Page object — do NOT use .stream()
         Page<DocumentResponse> documentPage = documentService.findMyDocuments(userId, pageable)
                 .map(doc -> new DocumentResponse(
                         doc.getId(),

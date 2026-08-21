@@ -21,7 +21,6 @@ public class DelegatingAuthenticationEntryPoint implements AuthenticationEntryPo
     public void commence(HttpServletRequest request,
                          HttpServletResponse response,
                          AuthenticationException authException) {
-        // Delegates filter-chain exception directly to @RestControllerAdvice
         resolver.resolveException(request, response, null, authException);
     }
 }

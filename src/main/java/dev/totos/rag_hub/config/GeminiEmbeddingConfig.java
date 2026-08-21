@@ -31,9 +31,7 @@ public class GeminiEmbeddingConfig {
     public static class GeminiEmbeddingModel extends AbstractEmbeddingModel {
 
         private static final String MODEL = "gemini-embedding-001";
-        // gemini-embedding-001 defaults to 3072 dims; set this to whatever
-        // your vector store column expects. 768 keeps parity with the old
-        // text-embedding-004 dimension if you don't want to migrate the store.
+
         private static final int OUTPUT_DIMENSIONALITY = 768;
 
         private final String apiKey;

@@ -27,7 +27,6 @@ public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final DelegatingAuthenticationEntryPoint authEntryPoint;
     private final IpRateLimitingFilter ipRateLimitingFilter;
-    // 1. Inject your custom JWT filter
     public SecurityConfig(IpRateLimitingFilter ipRateLimitingFilter,JwtAuthenticationFilter jwtAuthFilter,DelegatingAuthenticationEntryPoint authEntryPoint) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.authEntryPoint=authEntryPoint;
@@ -39,9 +38,8 @@ public class SecurityConfig { // Renamed to PascalCase (SecurityConfig)
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(request -> {
-                    // Ensure this is org.springframework.web.cors.CorsConfiguration
                     org.springframework.web.cors.CorsConfiguration opt = new org.springframework.web.cors.CorsConfiguration();
-                    opt.setAllowedOrigins(List.of("*"));
+                    opt.setAllowedOrigins(List.of("http://localhost:3000"));
                     opt.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
                     opt.setAllowedHeaders(List.of("*"));
                     opt.setAllowCredentials(true);

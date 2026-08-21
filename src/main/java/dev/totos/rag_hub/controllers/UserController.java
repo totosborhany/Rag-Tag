@@ -53,7 +53,7 @@ public class UserController {
         ResponseCookie accessCookie = ResponseCookie.from("accessToken",null).httpOnly(true).secure(false).maxAge(0).path("/").build();
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", null)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0)
                 .build();
